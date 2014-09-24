@@ -10,6 +10,25 @@
  * is done by creating a file called 'remotes.txt' in the current directory.
  * The file should contain a hexadecimal remote address followed by the name.
  *
+ * Usage:
+ * ------
+ * This program expects a raw bit stream outputted by a OOK demodulator as
+ * input on stdin.
+ *
+ * One way to obtain this bitstream is using Software defined radio,
+ * for instance RTL-SDR. In this the following command can be used.
+ *   rtl_fm -M am -g 5 -f 433.42M -s 270K | \
+ *      ./converters/am_to_ook -d 10 -t 1500 -  | \
+ *      ./decoders/decode_somfy
+ * Note that the rtl_fm gain and am_to_ook threshold values will need tweaking.
+ * One way to do this is to first dump the rtl_fm output to file and then run
+ * am_to_ook with the '-a' option to get the peak values. Then choose a
+ * threshold somewhere below that peak value.
+ *
+ * An other way to obtain the bitstream is by using a microcontroller to sample
+ * the output pin of a simple OOK 433 MHz receiver every ~36 us. Every byte
+ * contains 8 samples with the MSB being the first sample.
+ *
  * Copyright (c) 2014, David Imhoff <dimhoff_devel@xs4all.nl>
  * All rights reserved.
  *
@@ -64,12 +83,20 @@ enum state_t { idle, preamble, data0, data1 } state = idle, new_state;
 typedef uint64_t somfy_frame_t;
 
 void usage(char *my_name) {
-	fprintf(stderr, "usage: %s [-1nv]\n", my_name);
+	fprintf(stderr, "Usage: %s [-1nvh]\n", my_name);
 	fprintf(stderr, "\n");
-	fprintf(stderr, "options:\n");
+	fprintf(stderr, "Options:\n");
 	fprintf(stderr, " -1    Use single line output mode\n");
 	fprintf(stderr, " -n    Don't display human readable control and address names\n");
 	fprintf(stderr, " -v    Increase verbose level, can be used multiple times\n");
+	fprintf(stderr, " -h    Display this help\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "This program expects the raw bit stream form the OOK demodulator as input on\n");
+	fprintf(stderr, "stdin. For example when using RTL-SDR the following command line can be used:\n");
+	fprintf(stderr, "  rtl_fm -M am -g 5 -f 433.42M -s 270K | \\\n");
+	fprintf(stderr, "  ./converters/am_to_ook -d 10 -t 1500 -  | \\\n");
+	fprintf(stderr, "  ./decoders/decode_somfy\n");
+	fprintf(stderr, "Note that the rtl_fm gain and am_to_ook threshold values will need tweaking\n");
 }
 
 uint8_t somfy_frame_get_encryption_key(somfy_frame_t frame) {
@@ -379,7 +406,7 @@ int main(int argc, char *argv[])
 	int filter_bits = 0;
 #endif
 	
-	while ((opt = getopt(argc, argv, "1nv")) != -1) {
+	while ((opt = getopt(argc, argv, "1nvh")) != -1) {
 		switch (opt) {
 		case '1':
 			one_line = 1;
@@ -390,6 +417,9 @@ int main(int argc, char *argv[])
 		case 'v':
 			verbose++;
 			break;
+		case 'h':
+			usage(argv[0]);
+			exit(EXIT_SUCCESS);
 		default: /* '?' */
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
