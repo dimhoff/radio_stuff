@@ -135,22 +135,20 @@ const char *somfy_frame_get_control_name(somfy_frame_t frame) {
 		"c0",
 		"MY",
 		"UP",
-		"c3",
+		"MY+UP",
 		"DOWN",
-		"c5",
-		"c6",
+		"MY+DOWN",
+		"UP+DOWN",
 		"c7",
 		"PROG",
-		"c9",
-		"c10",
+		"SUN+FLAG",
+		"FLAG",
 		"c11",
 		"c12",
 		"c13",
 		"c14",
 		"c15"
 	};
-//TODO: The values chosen for the actions suggest a bit set... but I can't
-//imagine why you want to send a up & down control at the same time....
 	
 	return names[somfy_frame_get_control(frame)];
 }
